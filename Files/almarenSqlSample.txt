@@ -1,0 +1,81 @@
+import scala.util.Try
+import scala.util.{Failure, Success}
+import org.apache.log4j.{Level, Logger, LogManager}
+
+
+
+val logger = LogManager.getLogger("com.Artifact")
+logger.setLevel(Level.INFO)
+
+
+
+Try {
+import com.modak.common.token.Token
+import com.modak.checkpoint.Checkpoint
+import com.modak.common.Constants
+
+
+
+val inputJson = Token.parsedInputJson
+val checkpoint = Checkpoint(inputJson.processId, inputJson.dataplaceId, None, None, Some(inputJson.datamovementId))
+checkpoint.startDataMovement(inputJson.tableId)
+Try {
+import com.github.music.of.the.ainur.almaren.builder.Core.Implicit;
+import com.github.music.of.the.ainur.almaren.Almaren;
+import com.modak.encryption.MessageEncryptionUtil
+import com.modak.common.Util._
+import com.modak.common.token.Token.Ldap
+import com.modak.common.token.Token.Aws
+
+
+
+val almaren = Almaren("nabu-sparkbot-ingestion");
+almaren.builder
+.sourceJdbc("jdbc:mysql://w3.redis.modak.com:3306/sales","com.mysql.jdbc.Driver",
+"""SELECT
+| `CUSTOMERID` as `CUSTOMERID`,
+| `CUSTOMERNAME` as `CUSTOMERNAME`,
+| `PHONE` as `PHONE`,
+| `ADDRESSLINE1` as `ADDRESSLINE1`,
+| `ADDRESSLINE2` as `ADDRESSLINE2`,
+| `CITY` as `CITY`,
+| `STATE` as `STATE`,
+| `POSTALCODE` as `POSTALCODE`
+| from sales.`customer_details`""".stripMargin,
+Some(Ldap.source.username), Some(Ldap.source.password), Map("fetchsize" -> Constants.DB.fetchSize))
+.sqlExpr("*","cast(cos(0) as string) as virtualcol")
+.sql(
+"""
+SELECT
+| CITY as c5 ,
+| CUSTOMERID as c1 ,
+| CUSTOMERNAME as c2 ,
+| PHONE as c3 ,
+| ADDRESSLINE1 as addressline1 ,
+| ADDRESSLINE2 as addressline2 ,
+| STATE as state ,
+| POSTALCODE as postalcode
+| from __TABLE__
+""".stripMargin
+).batch.write.format("parquet").mode("overwrite").option("path","hdfs:///user/spark-service-account/warehouse/1794/1815/sales/sales/customer_details").save();
+} match {
+case Success(s) =>
+logger.info(s"Success ${inputJson.tableId}")
+checkpoint.endDatamovementWithSuccess(inputJson.tableId, verificationStatus = true)
+sys.exit(0)
+case Failure(f) =>
+logger.error(s"Failed ${inputJson.tableId}")
+logger.error(s"Error while ingestion", f)
+checkpoint.endDatamovementWithError(inputJson.tableId, f.getLocalizedMessage, verificationStatus = false)
+sys.exit(1)
+}
+} match {
+case Success(s) => {
+logger.info(s"Ingestion Success")
+sys.exit(0)
+}
+case Failure(f) => {
+logger.error(s"Error while ingestion", f)
+sys.exit(1)
+}
+}
