@@ -1,0 +1,9 @@
+get_table_adv_opt_partition_details(templateData)::=<<
+Select t.*,case when ((((advance_option_details ->\>'advanced_table_options')::json ->\> 'parallel_ingestion')::json)
+->\> 'enable') = 'true'
+           then true
+           else false end as is_parallel_ingestion,case when ((((advance_option_details ->\>'advanced_table_options')::json ->\>'parallel_ingestion')::json) ->\> 'enable') = 'true'
+           then ((((advance_option_details ->\>'advanced_table_options')::json ->\> 'parallel_ingestion')::json) ->\> 'max_connections')
+           else null end as maximum_parallel_connections from nabu.advanced_options_object_details t where object_id =$templateData.input_data.where_condition$ and
+data_movement_id=$templateData.input_data.data_movement_id$ and valid_to_ts='9999-12-31'
+>>
