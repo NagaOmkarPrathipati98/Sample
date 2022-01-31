@@ -1,0 +1,175 @@
+metadata_info_query(templateData)::=<<
+{
+  ""input_data"": $generate_metadata_input(templateData.query_input)$,
+   ""sequential_templates"":[
+       {
+         ""query_template_group"": ""ingestion_templates|artifact_ingestion"",
+         ""query_template_name"": ""rest_api_call"",
+         ""query_output_key"": ""rest_api_call"",
+         ""query_type"":""select""
+       },
+       {
+         ""query_template_group"": ""ingestion_templates|artifact_ingestion"",
+         ""query_template_name"": ""get_metatdata_info"",
+         ""query_output_key"": ""get_metatdata_info"",
+         ""query_type"":""select""
+        }
+
+   ],
+   ""output_keys"":[""rest_api_call"",""get_metatdata_info""]
+}
+>>
+
+
+rest_api_call(templateData)::=<<
+select 
+case when status ='SUCCESS' then true
+else false
+end as is_success from nabu.checkpoint_status cs where 
+data_movement_id = $templateData.input_data.data_movement_id$ 
+and process_id = $templateData.input_data.process_id$
+and table_id  = $templateData.input_data.table_id$
+and valid_to_ts = '9999-12-31')
+>>
+
+
+
+get_metatdata_info(templateData)::=<<
+$if(first(templateData.rest_api_call).is_success)$
+select dcmp.data_precision, dcmp.ordinal_position , dcmp.is_nullable, dcmp.data_length,
+dcmp.data_scale, dcmp.column_name, dcmp.data_type, dcmp.schema_name, dcmp.table_name,
+(dataplace_info ->\>'host_name') as host_name,(dataplace_info ->\>'database_name') as database_name
+from nabu.dataplace_column_metadata_physical dcmp
+left join nabu.dataplace_physical dp on dp.dataplace_id=dcmp.dataplace_id
+where dp.valid_to_ts='9999-12-31' and dcmp.valid_to_ts= '9999-12-31' and table_id=$templateData.input_data.table_id$
+$endif$
+>>
+
+get_metadata_and_run_bash_script(templateData,message_id,bot_id,parent_task_start_ts,parent_task_end_ts,parent_metadata,parent_bot_name,parent_task_name,dataAsMap)::=<<
+{
+ ""bot_name"": ""DBOpsBot"",
+ ""bot_metadata"": {
+    $common_metadata(message_id,bot_id,parent_metadata.message_id,parent_metadata.workflow_route_bot_topic_details.DBOpsBot,parent_metadata)$,
+    ""tags"": {$common_tags(parent_metadata,""KoshBot"")$,""task_dependency"":true},
+    ""task_retry_intervals_secs"": $retry_intervals()$,
+    ""message_context"": ""get_metadata_and_run_bash_script""
+  },
+
+  ""bot_tasks"": [
+    {
+      ""task_name"": ""get_metadata_and_run_bash_script"",
+      ""data_processor"": {
+        ""classname"": ""com.modak.bots.processor.NullProcessor"",
+        ""props"": {}
+      },
+      ""skipLogicPattern"": ""doNothing"",
+      ""pre_task_logging_template_details"": {
+        ""template_group"": ""common_templates|artifact_ingestion"",
+        ""template_name"": ""pre_log_template""
+      },
+      ""app_template_details"": {
+        ""template_group"": ""ingestion_templates|artifact_ingestion"",
+        ""template_name"": ""metadata_info_query""
+      },
+      ""input_data"": {
+        ""template_execution_type"": ""sequential"",
+        ""useTransactionControl"": false,
+        ""query_input"": $templateData$
+
+      },
+      ""output_message_templates"": [
+        {
+          ""template_group"": ""ingestion_flow|artifact_ingestion"",
+          ""template_name"": ""spark_success_msg""
+        },
+        {
+          ""template_group"": ""common_templates|artifact_ingestion"",
+          ""template_name"": ""task_status_success_msg""
+        }
+      ],
+      ""error_message_templates"": [
+        {
+          ""template_group"": ""common_templates|artifact_ingestion"",
+          ""template_name"": ""error_template_create_msg""
+        }
+      ]
+    }
+  ]
+}
+>>
+
+spark_success_msg(templateData,message_id,bot_id,parent_task_start_ts,parent_task_end_ts,parent_metadata,parent_bot_name,parent_task_name,dataAsMap)::=<<
+{
+  "bot_name": "SparkScriptBot",
+  "bot_metadata": {
+    $common_metadata(message_id,bot_id,parent_metadata.message_id,parent_metadata.workflow_route_bot_topic_details.SparkScriptBot,parent_metadata)$,
+    "tags": {$common_tags(parent_metadata,"KoshBot")$,"task_dependency":true},
+    "task_retry_intervals_secs": $retry_intervals()$,
+    "message_context": "run_command_to_run_rest_api_job_using_spark"
+  },
+    "bot_tasks": [
+    {
+      "task_name": "run_command_to_run_rest_api_job_using_spark",
+      "data_processor": {
+        "classname": "com.modak.bots.processor.NullProcessor",
+        "props": {}
+      },
+      "pre_task_logging_template_details": {
+          "template_group": "common_templates|artifact_parallel_ingestion",
+          "template_name": "pre_log_template"
+      },
+      "app_template_details": {
+        "template_group": "ingestion_templates|artifact_parallel_ingestion",
+        "template_name": "command_to_run_rest_api_call_script"
+      },
+      "input_data": {
+              "data": $templateData$,
+              "retry_attempt" : $parent_metadata.tags.retry_attempt$,
+              "flow_number" : $first(dataAsMap.query_input.table_metadata_output).flow_number$,
+              "data_movement_id" : $first(dataAsMap.query_input.table_metadata_output).data_movement_id$,
+              "where_condition" : "$first(dataAsMap.query_input.table_metadata_output).where_condition$",
+              "process_id" : $first(dataAsMap.query_input.table_metadata_output).process_id$,
+              "schema_drift_flag": $first(dataAsMap.query_input.table_metadata_output).schema_drift_flag$,
+              "ssh_host" : "$first(dataAsMap.query_input.spark_script_inputs).ssh_host$",
+              "ssh_username" : "$first(dataAsMap.query_input.spark_script_inputs).ssh_username$",
+              "engine_path" : "$first(dataAsMap.query_input.spark_script_inputs).engine_path$",
+              "spark_location" : "$first(dataAsMap.query_input.spark_script_inputs).spark_location$",
+			  "template_group": "ingestion_templates|artifact_parallel_ingestion",
+			  "spark_application_template" : "insert_spark_application_details"
+       },
+      "output_message_templates": [
+        $if(data.input_data.is_create_table)$
+        {
+          "template_group": "ingestion_flow|artifact_parallel_ingestion",
+          "template_name": "generate_$dataAsMap.query_input.input_data.destination$_ddl_and_create_table",
+          "useIncomingData":true
+        },
+        $else$
+        {
+           "template_group": "ingestion_flow|artifact_parallel_ingestion",
+           "template_name": "insert_script_status_and_destination_into_nabu",
+           "useIncomingData":true
+        },
+        $endif$
+
+        {
+          "template_group": "common_templates|artifact_parallel_ingestion",
+          "template_name": "task_status_success_msg"
+        }
+      ],
+      "error_message_templates": [
+        {
+          "template_group": "common_templates|artifact_parallel_ingestion",
+          "template_name": "error_template_create_msg"
+        }
+      ]
+    }
+  ]
+}
+>>
+
+command_to_run_rest_api_call_script(templateData)::=<<
+["sh","../scripts/ingestion/run_api_call_job.sh",$templateData.input_data.table_id$, ""$([first(templateData.table_metadata_output)
+.destination_type,"_file_system_type"])(templateData)$$first(templateData.table_metadata_output)
+.adls_gen2_container$@$first(templateData.table_metadata_output).storage_account$.dfs.core.windows.net/$first(templateData.table_metadata_output).upper_case_destination_table_name$/$first
+(templateData.table_metadata_output).destination_folder_format$,"SOURCE NAME", "FLAG"]
