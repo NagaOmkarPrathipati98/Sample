@@ -1,0 +1,25 @@
+"output_message_templates": [
+		$if(first(dataAsMap.query_input.table_metadata_output).is_default)$
+        {
+          "template_group": "ingestion_flow|artifact_ingestion",
+          "template_name": "insert_script_status_and_destination_into_nabu_if_default",
+          "useIncomingData":true
+        },
+        $elseif(!(dataAsMap.query_input.input_data.is_create_table))$
+        {
+          "template_group": "ingestion_flow|artifact_ingestion",
+          "template_name": "insert_script_status_and_destination_into_nabu",
+          "useIncomingData":true
+        },
+		$else$
+		{
+          "template_group": "ingestion_flow|artifact_ingestion",
+          "template_name": "generate_$dataAsMap.query_input.input_data.destination$_ddl_and_create_table",
+          "useIncomingData":true
+        },
+		$endif$
+		{
+            "template_group": "common_templates|artifact_ingestion",
+            "template_name": "task_status_success_msg"
+        }
+      ]
