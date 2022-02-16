@@ -1,0 +1,14 @@
+
+ojdbc6 ki logs path
+/opt/nabu/botworks/scripts/ingestion/logs/feb162022 , 8088 port
+
+
+ojdbc8 ki logs path
+/opt/nabu/botworks/scripts/ingestion/logs/feb162022/1208 , 8089 port
+
+
+
+for ojdbc10:
+server.port=8091
+logging.file.path=/opt/nabu/botworks/scripts/ingestion/logs/feb162022/1215
+
