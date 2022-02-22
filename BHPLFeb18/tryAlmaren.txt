@@ -1,0 +1,15 @@
+select 
+case when sub_partition_name is not null then sub_partition_name
+else partition_name
+end as partition_subpartition_name
+from
+(select
+t.schema_name,t.table_name,t.partition_name,t2.sub_partition_name
+from (select pti.schema_name ,pi2.partition_name ,
+pti.partition_type,pti.table_id,pti.table_name
+from nabu.partition_table_info pti
+left join nabu.partitions_info pi2 on pti.table_id = pi2.table_id
+where pti.table_id in (13219134) and pti.valid_to_ts = '9999-12-31' and pi2.valid_to_ts = '9999-12-31' ) t
+left join
+(select sub_partition_name,spi.partition_name from nabu.sub_partitions_info spi
+where spi.table_id in (13219134) and spi.valid_to_ts = '9999-12-31') t2 on t.partition_name = t2.partition_name) t3
