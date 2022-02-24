@@ -3,3 +3,10 @@ YOYO
 
 key: cwZkbSxl+tWiMN6MLhz5LqfV2j1eMvowePab2vCVJnDg28ftkkiQqRvh7Iag+x+uts7DRUUupWmlbIPai1uYyQ==
 stoarge accoubt: idea15pisplznonprodsa2
+
+
+#changing the port
+server.port=144
+
+logging.level.com.example.BHPLMetadataCheck.Controller=TRACE
+logging.file.path=/opt/nabu/botworks/scripts/ingestion/logs/feb24Night
