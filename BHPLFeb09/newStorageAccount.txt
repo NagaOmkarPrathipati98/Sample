@@ -19,3 +19,7 @@ sh, /opt/nabu/botworks/scripts/ingestion/triggerRecon.sh, bhpldest/AGE_SEX_BAND/
 "db_url":"jdbc:oracle:thin:@edwdev-scan.humana.com:1521/edwdev", 
 "jdbc_driver":"oracle.jdbc.OracleDriver", 
 "query": "select count(*) as count from EDW_PROD.AGE_SEX_BAND" }
+
+command_to_run_almaren_ingestion_job_ss(templateData)::=<<
+["sh","/opt/nabu/botworks/scripts/ingestion/triggerRecon.sh","$templateData.recon_destination_path$","$templateData.recon_json$"]
+>>
