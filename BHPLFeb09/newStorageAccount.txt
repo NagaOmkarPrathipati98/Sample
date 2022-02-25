@@ -23,3 +23,8 @@ sh, /opt/nabu/botworks/scripts/ingestion/triggerRecon.sh, bhpldest/AGE_SEX_BAND/
 command_to_run_almaren_ingestion_job_ss(templateData)::=<<
 ["sh","/opt/nabu/botworks/scripts/ingestion/triggerRecon.sh","$templateData.recon_destination_path$","$templateData.recon_json$"]
 >>
+
+
+Errorr::
+
+"error_message_templates\\\\\\\":[{\\\\\\\"template_group\\\\\\\":\\\\\\\"common_templates|artifact_ingestion\\\\\\\",\\\\\\\"template_name\\\\\\\":\\\\\\\"error_template_create_msg\\\\\\\"}]}\\\",\\\"error_json\\\":\\\"{\\\\\\\"generated_by\\\\\\\":\\\\\\\"SparkScriptBot\\\\\\\",\\\\\\\"generated_ts\\\\\\\":1645802355922,\\\\\\\"error_stacktrace\\\\\\\":\\\\\\\"java.lang.Exception: Exception while executing script at :java.lang.ArrayIndexOutOfBoundsException\\\\\\\\n\\\\\\\\tat com.modak.bots.SparkScriptBot.processLogic(SparkScriptBot.java:88)\\\\\\\\n\\\\\\\\tat com.modak.bots.basebot.AbstractBaseBot.processMessage(AbstractBaseBot.java:297)\\\\\\\\n\\\\\\\\tat com.modak.bots.basebot.AbstractPullBot.lambda$startBot$0(AbstractPullBot.java:55)\\\\\\\\n\\\\\\\\tat java.lang.Thread.run(Thread.java:748)\\\\\\\\n\\\\\\\",\\\\\\\"error_description\\\\\\\":\\\\\\\"java.lang.Exception: Exception while executing script at :java.lang.ArrayIndexOutOfBoundsException\\\\\\\",\\\\\\\"error_type\\\\\\\":\\\\\\\"java.lang.Exception\\\\\\\"}\\\",\\\"retry_attempt\\\":0},\\n\",\"stream\":\"stdout\",\"time\":\"2022-02-25T15:19:15.933172045Z\"}"
