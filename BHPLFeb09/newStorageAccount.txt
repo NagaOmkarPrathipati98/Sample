@@ -10,3 +10,12 @@ server.port=144
 
 logging.level.com.example.BHPLMetadataCheck.Controller=TRACE
 logging.file.path=/opt/nabu/botworks/scripts/ingestion/logs/feb24Night
+
+
+sh, /opt/nabu/botworks/scripts/ingestion/triggerRecon.sh, bhpldest/AGE_SEX_BAND/full/2022/02/25/15/19/14/recon/RECON_EDWDEV_EDW_PROD_AGE_SEX_BAND_2022_02_25_15_19_15.csv, { "jwt_token": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJGSVJFU0hPVFNfQVBQTElDQVRJT04iLCJzZXNzaW9uX2lkIjoxODc4NzY2MDUsImV4cCI6MTY0NTgxNjA5MywidXNlcklkIjoiYm90cy1zcnYtYWNjb3VudCIsImlhdCI6MTY0NTc5NDQ5M30.PAqymofpou3_TnFZbs-B7oPyrcfo8_IddJvhHLzTJBO-Ewy295vMlqhBL2Ofy91juwIz6DAgamq6o-ofVGiAU2o2oTkCcZa4PqNnpRoIdaxEfWO4FDSwjpzYCBC2GCGWpN0NSJU_V_MvVOM0IVXrISleFMnhJnBx4CNDNT-TL6bPfcdK4pRl1Q8iFzsoZPi9pr_ZrRY0YRNC_Mf-T_uPVJfXEyD2QHuW3tuKhdNfdkt9wYphgNljrnkkpdaLP0K0uDxf8aXHbXrO9pWIQzXAH-zTYAUPS-xqXj4zdEHWy95mJenmEmULVbzPn5r5hEV9DEMnMI1MxUaiR5K9cuDa_Q", "source_credential_id": 96 , 
+"source_credential_type_id": 1, 
+"destination_credential_id": 98 , 
+"destination_credential_type_id": 5, 
+"db_url":"jdbc:oracle:thin:@edwdev-scan.humana.com:1521/edwdev", 
+"jdbc_driver":"oracle.jdbc.OracleDriver", 
+"query": "select count(*) as count from EDW_PROD.AGE_SEX_BAND" }
