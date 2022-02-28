@@ -10,3 +10,105 @@ server.port=144
 
 logging.level.com.example.BHPLMetadataCheck.Controller=TRACE
 logging.file.path=/opt/nabu/botworks/scripts/ingestion/logs/feb24Night
+
+
+sh, /opt/nabu/botworks/scripts/ingestion/triggerRecon.sh, bhpldest/AGE_SEX_BAND/full/2022/02/25/15/19/14/recon/RECON_EDWDEV_EDW_PROD_AGE_SEX_BAND_2022_02_25_15_19_15.csv, { "jwt_token": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJGSVJFU0hPVFNfQVBQTElDQVRJT04iLCJzZXNzaW9uX2lkIjoxODc4NzY2MDUsImV4cCI6MTY0NTgxNjA5MywidXNlcklkIjoiYm90cy1zcnYtYWNjb3VudCIsImlhdCI6MTY0NTc5NDQ5M30.PAqymofpou3_TnFZbs-B7oPyrcfo8_IddJvhHLzTJBO-Ewy295vMlqhBL2Ofy91juwIz6DAgamq6o-ofVGiAU2o2oTkCcZa4PqNnpRoIdaxEfWO4FDSwjpzYCBC2GCGWpN0NSJU_V_MvVOM0IVXrISleFMnhJnBx4CNDNT-TL6bPfcdK4pRl1Q8iFzsoZPi9pr_ZrRY0YRNC_Mf-T_uPVJfXEyD2QHuW3tuKhdNfdkt9wYphgNljrnkkpdaLP0K0uDxf8aXHbXrO9pWIQzXAH-zTYAUPS-xqXj4zdEHWy95mJenmEmULVbzPn5r5hEV9DEMnMI1MxUaiR5K9cuDa_Q", "source_credential_id": 96 , 
+"source_credential_type_id": 1, 
+"destination_credential_id": 98 , 
+"destination_credential_type_id": 5, 
+"db_url":"jdbc:oracle:thin:@edwdev-scan.humana.com:1521/edwdev", 
+"jdbc_driver":"oracle.jdbc.OracleDriver", 
+"query": "select count(*) as count from EDW_PROD.AGE_SEX_BAND" }
+
+
+-------------------------------------------------------------------------
+
+In ing_temp.stg:
+
+generate_almaren_artifact_for_jdbcParallel_adls_gen2(templateData)::=<<
+import scala.sys.process._
+import scala.util.Try
+import scala.util.{Failure, Success}
+import org.apache.log4j.{Level, Logger, LogManager}
+val logger = LogManager.getLogger("com.Artifact")
+logger.setLevel(Level.INFO)
+Try {
+import com.modak.common.token.Token
+import com.modak.checkpoint.Checkpoint
+import com.modak.common.Constants
+val inputJson = Token.parsedInputJson
+val checkpoint = Checkpoint(inputJson.processId,inputJson.dataplaceId, None, None,  Some(inputJson.datamovementId))
+checkpoint.startDataMovement(inputJson.tableId)
+Try {
+ import com.github.music.of.the.ainur.almaren.builder.Core.Implicit
+ import com.github.music.of.the.ainur.almaren.Almaren
+ import com.modak.common.token.Token
+ import com.modak.common.token.Token.Ldap
+ import com.modak.common.token.Token.AzureGen2
+ import com.modak.encryption.MessageEncryptionUtil
+ import com.github.music.of.the.ainur.almaren.jdbcparallel.SourceJdbcParallelConn.SourceJdbcParallelImplicit
+ import com.modak.common.Util._
+ import org.apache.spark._
+ import org.apache.spark.sql._
+ import scala.util.Random
+ val almaren = Almaren("adls_gen2_parallel_ingestion")
+ val spark = almaren.spark.getOrCreate()
+ val staticQuery = "SELECT $templateData.column_metadata_output:ApplyFunction();separator=","$ from $(first(templateData.metadata_info_of_source).schema_name)$.$(first(templateData.metadata_info_of_source).table_name)$"
+ 
+ def createPartitionQueries(query:String,parameters:List[String]) =
+     parameters.map(partition => s"\$query partition \$partition")
+ def createSubPartitionQueries(query:String,parameters:List[String]) =
+     parameters.map(subpartition => s"\$query subpartition \$subpartition")
+	 
+
+ spark.conf.set(s"fs.azure.account.key.\${AzureGen2.target.accountname}.dfs.core.windows.net", AzureGen2.target.accountkey)
+ val x=Random.shuffle(List($jdbcPartitionSubPartitionGeneration(templateData)$))
+  spark.conf.set("mapreduce.fileoutputcommitter.marksuccessfuljobs", "false")
+ almaren.builder
+    .sourceJdbcParallel($([first(templateData.table_metadata_output).source_type,"_source"])(templateData)$,
+      $if(first(templateData.table_partition_output).is_sub_partition)$
+      createSubPartitionQueries(staticQuery,x),
+      $else$
+       createPartitionQueries(staticQuery,x),
+      $endif$
+      $first(templateData.get_spark_configs).parallel_threads$,
+      Some(Ldap.source.username),Some(Ldap.source.password),Map("fetchsize" -> Constants.DB.fetchSize))
+    .batch.write.format("$templateData.input_data.intermediate_type$").mode("overwrite").$([first(templateData
+    .table_metadata_output).destination_type,"_destination_YYYY_MM_DD_HH_mm_SS_format"])(templateData)$
+ } match {
+   case Success(s) =>
+     logger.info(s"Success \${inputJson.tableId}")
+     checkpoint.endDatamovementWithSuccess(inputJson.tableId, verificationStatus = true)
+   case Failure(f) =>
+     logger.error(s"Failed \${inputJson.tableId}")
+     logger.error(s"Error while ingestion", f)
+     checkpoint.endDatamovementWithError(inputJson.tableId, f.getLocalizedMessage, verificationStatus = false)
+     throw f
+ } } match {
+    case Success(s) => {
+      logger.info(s"Ingestion Success")
+        }
+        case Failure (f) => {
+        logger.error (s"Error while ingestion", f)
+        throw f
+    }
+ }
+>>
+
+In datatype_mapping.stg:
+
+jdbcPartitionSubPartitionGeneration(templateData)::=<<
+$if(first(templateData.table_partition_output).is_sub_partition)$
+$templateData.table_partition_output:{subpartitions | $generateSubPartitions(subpartitions,templateData)$};separator=","$
+$else$
+$templateData.table_partition_output:{partitions | $generatePartitions(partitions,templateData)$};separator=","$
+$endif$
+>>
+
+generatePartitions(partitions,templateData)::=<<
+    "($partitions.partition_name$)"
+>>
+
+generateSubPartitions(subpartitions,templateData)::=<<
+    "($subpartitions.sub_partition_name$)"
+>>
