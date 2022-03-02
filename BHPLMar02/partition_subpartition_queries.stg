@@ -1,0 +1,36 @@
+
+oracle_jdbcParallelQueries(templateData)::=<<
+$if(first(templateData.table_partition_output).is_sub_partition)$
+$templateData.table_partition_output:{subpartitions | $generateSubQueries(subpartitions,templateData)$};separator=",\n"$
+$else$
+$templateData.table_partition_output:{partitions | $generateQueries(partitions,templateData)$};separator=",\n"$
+$endif$
+>>
+
+generateQueries(partitions,templateData)::=<<
+    "SELECT $templateData.column_metadata_output:ApplyFunction();separator=","$ from $partitions.schema_name$.$partitions.table_name$ partition ($partitions.partition_name$)"
+>>
+
+generateSubQueries(subpartitions,templateData)::=<<
+    "SELECT $templateData.column_metadata_output:ApplyFunction();separator=","$ from $subpartitions.schema_name$.$subpartitions.table_name$ subpartition ($subpartitions.sub_partition_name$)"
+>>
+
+
+BHPL workflow KTs
+
+https://modakanalytics0-my.sharepoint.com/:v:/g/personal/goutham_aepuru_modak_com/EXHIZr2WnjBHl4W0wsc1YYEBVTx2T_PmfT7GOS7Hc5E0mw
+
+https://modakanalytics0-my.sharepoint.com/:v:/g/personal/venkata_gunturi_modak_com/Edsgd4O-1eZMjj5vdkhY_a4Boi9EPmtWvoZYzgH4kLYfYA
+
+
+---------------------------------------------------------------------------------
+
+
+#changing the port
+server.port=150
+
+#log file path of console
+logging.file.path=/opt/nabu/botworks/scripts/ingestion/logs/mar02
+
+
+-------------------------------------------------------------------------------
