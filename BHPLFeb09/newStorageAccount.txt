@@ -1,5 +1,5 @@
 YOYO
-
+java -jar myproject.jar --spring.config.location=\ optional:classpath:/application.properties
 
 key: cwZkbSxl+tWiMN6MLhz5LqfV2j1eMvowePab2vCVJnDg28ftkkiQqRvh7Iag+x+uts7DRUUupWmlbIPai1uYyQ==
 stoarge accoubt: idea15pisplznonprodsa2
