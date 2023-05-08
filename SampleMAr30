@@ -1,20 +1,14 @@
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: echo-service-ingress
-spec:
-  hosts:
-    - 'sdc.com'
-  gateways:
-  - sdc-gateway
-  http:
-  - match:
-      - uri:
-          prefix: "/sdc1"
-    rewrite:
-      uri: "/"
-    route:
-    - destination:
-        host: sdc-service
-        port:
-          number: 18630
+
+Join Zoom Meeting
+
+Meeting URL:
+
+https://humana.zoom.us/j/94068765832?pwd=cVMxdzk5a1ZBTHFDdjRvWSs1Vk5EQT09&from=addon
+
+Meeting ID:
+
+940 6876 5832
+
+Passcode:
+
+090774
