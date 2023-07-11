@@ -1,14 +1,4 @@
+Instance admin - to delete, update and create MIG, instance and disks
+This is used when ever we redeploy or create a Kafka component
 
-Join Zoom Meeting
-
-Meeting URL:
-
-https://humana.zoom.us/j/94068765832?pwd=cVMxdzk5a1ZBTHFDdjRvWSs1Vk5EQT09&from=addon
-
-Meeting ID:
-
-940 6876 5832
-
-Passcode:
-
-090774
+Storage admin - to delete and create files from storage accounts - this is used when we deploy our resources vi terraform a state lock file will be created and after the pipeline run is complete, the file should be deleted which is possible only if we have delete access
