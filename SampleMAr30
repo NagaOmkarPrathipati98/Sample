@@ -2,3 +2,11 @@ Instance admin - to delete, update and create MIG, instance and disks
 This is used when ever we redeploy or create a Kafka component
 
 Storage admin - to delete and create files from storage accounts - this is used when we deploy our resources vi terraform a state lock file will be created and after the pipeline run is complete, the file should be deleted which is possible only if we have delete access
+
+
+In DEV
+
+ 
+
+fpOFmg0GdEMpuICAFaKt7CB6TomvARgmG4OFHcRZNbruKvMW
+Secret - G57xWAzKVZdzC81HZrnJS8T345qCrZ2XJkrCsjngO3Ol5Ksy9Sw3eNnGRak7N6aY
